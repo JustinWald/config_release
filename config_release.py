@@ -10,15 +10,15 @@ def parse_arguments():
     parser.add_argument(
         "--repo-path",
         type=Path,
-        default=Path.cwd() / "integration_dev",
-        help="Path to the repository (default: current working directory / 'integration_dev').",
+        default=Path.cwd(),
+        help="Path to the repository (default: current working directory).",
     )
     return parser.parse_args()
 
 
 def parse_project_metadata(changelog_file):
     """Extract customer and project names from the changelog."""
-    METADATA_PATTERN = r"^\*\*Customer Name:\*\* `(?P<customer_name>\w+)`$\n^\*\*Project Name:\*\* `(?P<project_name>\w+)`$"
+    METADATA_PATTERN = r"\*\*Customer Name:\*\* `(?P<customer_name>\w+)`\n\*\*Project Name:\*\* `(?P<project_name>\w+)`"
 
     with open(changelog_file, "r") as f:
         changelog = f.read()
@@ -43,7 +43,8 @@ def read_latest_version(changelog_file):
 
     version = '0.0.0'
     for line in lines:
-        version = re.match(VERSION_PATTERN, line).group(0)
+        match = re.match(VERSION_PATTERN, line)
+        version = match.group("version") if match else version
 
     return version
 
@@ -101,6 +102,7 @@ def amend_commit_with_changelog(repo_path, changelog_file):
     """Amend the last commit to include the updated changelog."""
     subprocess.run(["git", "-C", str(repo_path), "add", str(changelog_file)])
     subprocess.run(["git", "-C", str(repo_path), "commit", "--amend", "--no-edit"])
+    subprocess.run(["git", "-C", "push", "origin", "-f"])
 
 
 def tag_version(repo_path, prefix, new_version):
