@@ -122,14 +122,14 @@ def generate_changelog(repo_path, changelog_file, new_version):
     timestamp = datetime.now().strftime("%b %d, %Y, %I:%M:%S %p")
     try:
         result = subprocess.run(
-            ["git", "-C", str(repo_path), "log", "--pretty=format:- %s", "--since=HEAD~10"],
+            ["git", "-C", str(repo_path), "log", "--pretty=format:%B", "-1"],
             capture_output=True,
             text=True,
             check=True,
         )
         change_description = result.stdout.strip()
         with open(changelog_file, "a") as f:
-            f.write(f"## v{new_version} - {timestamp}\n")
+            f.write(f"## v{new_version} - {timestamp} (UTC)\n")
             f.write(change_description)
             f.write("\n\n")
         logging.info("Changelog updated successfully.")
