@@ -26,18 +26,23 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def parse_project_metadata(changelog_file):
-    """Extract customer and project names from the changelog."""
-    logging.info("Parsing project metadata from CHANGELOG.md.")
-    METADATA_PATTERN = r"\*\*Customer Name:\*\* `(?P<customer_name>\w+)`\n\*\*Project Name:\*\* `(?P<project_name>\w+)`"
+def parse_project_metadata(repo_path):
+    """Parse the project metadata from the branch name."""
+    logging.info("Parsing project metadata from branch name.")
+    BRANCH_PATTERN = r"(?P<customer_name>\w+)/(?P<project_name>\w+)/release"
 
     try:
-        with open(changelog_file, "r") as f:
-            changelog = f.read()
-
-        match = re.search(METADATA_PATTERN, changelog)
+        # Get the current branch name
+        result = subprocess.run(
+            ["git", "-C", str(repo_path), "branch", "--show-current"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        branch_name = result.stdout.strip()
+        match = re.search(BRANCH_PATTERN, branch_name)
         if not match:
-            raise ValueError("Customer or Project name not found in the changelog.")
+            raise ValueError("Branch name does not match the expected pattern. Expected: '<customer_name>/<project_name>/release', got: {branch_name}")
 
         customer_name, project_name = match.group("customer_name"), match.group("project_name")
         logging.info(f"Extracted metadata: Customer Name = {customer_name}, Project Name = {project_name}")
@@ -51,23 +56,27 @@ def read_latest_version(changelog_file):
     """Read the latest version from the changelog."""
     logging.info("Reading the latest version from CHANGELOG.md.")
     VERSION_PATTERN = r"## v(?P<version>\d+\.\d+\.\d+)"
+    INIT_VERSION = "0.0.0"
 
     if not changelog_file.exists():
-        logging.error("CHANGELOG.md not found. Unable to determine the latest version.")
-        raise FileNotFoundError("CHANGELOG.md not found.")
+        logging.info("CHANGELOG.md not found. Creating a new one...")
+        with open(changelog_file, "w") as f:
+            f.write("# Changelog\n\n")
 
     with open(changelog_file, "r") as f:
         lines = f.readlines()
 
+    version = INIT_VERSION
     for line in lines:
         match = re.match(VERSION_PATTERN, line)
         if match:
             version = match.group("version")
-            logging.info(f"Latest version found: {version}")
-            return version
 
-    logging.warning("No version found in CHANGELOG.md. Defaulting to '0.0.0'.")
-    return "0.0.0"
+    if version != INIT_VERSION:
+        logging.info(f"Latest version found: {version}")
+    else:
+        logging.warning("No version found in CHANGELOG.md. Defaulting to '0.0.0'.")
+    return version
 
 
 def bump_version(version, bump_type):
@@ -193,12 +202,8 @@ def main():
     repo_path = args.repo_path
     changelog_file = repo_path / "CHANGELOG.md"
 
-    if not changelog_file.exists():
-        logging.error("CHANGELOG.md not found. Cannot proceed without changelog.")
-        raise FileNotFoundError("CHANGELOG.md not found.")
-
     # Parse customer and project metadata
-    customer_name, project_name = parse_project_metadata(changelog_file)
+    customer_name, project_name = parse_project_metadata(repo_path)
     prefix = f"{customer_name}/{project_name}"
 
     # Determine the current version from the changelog
