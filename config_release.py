@@ -102,7 +102,6 @@ def amend_commit_with_changelog(repo_path, changelog_file):
     """Amend the last commit to include the updated changelog."""
     subprocess.run(["git", "-C", str(repo_path), "add", str(changelog_file)])
     subprocess.run(["git", "-C", str(repo_path), "commit", "--amend", "--no-edit"])
-    subprocess.run(["git", "-C", "push", "origin", "-f"])
 
 
 def tag_version(repo_path, prefix, new_version):
@@ -110,9 +109,6 @@ def tag_version(repo_path, prefix, new_version):
     # Tag the version locally
     tag_name = f"{prefix}/{new_version}"
     subprocess.run(["git", "-C", str(repo_path), "tag", tag_name])
-
-    # Push the tag to the already configured remote
-    subprocess.run(["git", "-C", str(repo_path), "push", "origin", tag_name])
 
 
 def main():
