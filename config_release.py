@@ -139,10 +139,35 @@ def generate_changelog(repo_path, changelog_file, new_version):
 
 def amend_commit_with_changelog(repo_path, changelog_file):
     """Amend the last commit to include the updated changelog."""
-    logging.info("Amending the last commit to include the updated changelog.")
     try:
+        # Stage the updated changelog file
         subprocess.run(["git", "-C", str(repo_path), "add", str(changelog_file)], check=True)
-        subprocess.run(["git", "-C", str(repo_path), "commit", "--amend", "--no-edit"], check=True)
+
+        # Get the original committer name and email
+        committer_name = subprocess.run(
+            ["git", "-C", str(repo_path), "log", "-1", "--pretty=format:%an"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+        committer_email = subprocess.run(
+            ["git", "-C", str(repo_path), "log", "-1", "--pretty=format:%ae"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+        # Amend the commit using the original committer identity
+        subprocess.run(
+            ["git", "-C", str(repo_path), "commit", "--amend", "--no-edit"],
+            check=True,
+            env={
+                **os.environ,
+                "GIT_COMMITTER_NAME": committer_name,
+                "GIT_COMMITTER_EMAIL": committer_email,
+            },
+        )
         logging.info("Changelog added to the last commit successfully.")
     except subprocess.CalledProcessError as e:
         logging.error(f"Error amending the commit: {e}")
