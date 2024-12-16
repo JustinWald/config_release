@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 VERSION_FILE = "VERSION"  # Path to your version file
@@ -62,6 +63,18 @@ def generate_changelog(new_version):
 
 def tag_version(new_version):
     """Tag the repository with the new version."""
+    token = os.getenv("GITHUB_TOKEN")
+    if not token:
+        raise EnvironmentError("GITHUB_TOKEN is not set in the environment.")
+
+    # Configure Git to use the token
+    repo = os.getenv("GITHUB_REPOSITORY")  # Automatically available in GitHub Actions
+    remote_url = f"https://{token}@github.com/{repo}.git"
+
+    # Set the remote URL using the token
+    subprocess.run(["git", "remote", "set-url", "origin", remote_url])
+
+    # Create and push the tag
     subprocess.run(["git", "tag", f"v{new_version}"])
     subprocess.run(["git", "push", "origin", f"v{new_version}"])
 
