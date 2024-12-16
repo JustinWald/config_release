@@ -107,7 +107,7 @@ def amend_commit_with_changelog(repo_path, changelog_file):
 def tag_version(repo_path, prefix, new_version):
     """Tag the repository with the new version and push it."""
     # Tag the version locally
-    tag_name = f"{prefix}/{new_version}"
+    tag_name = f"{prefix}/v{new_version}"
     subprocess.run(["git", "-C", str(repo_path), "tag", tag_name])
 
 
