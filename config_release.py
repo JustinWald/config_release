@@ -81,7 +81,7 @@ def bump_version(version, bump_type):
     elif bump_type == "minor":
         minor += 1
         patch = 0
-    elif bump_type == "patch":
+    elif bump_type == "bugfix":
         patch += 1
     else:
         logging.error(f"Invalid bump type: {bump_type}")
@@ -91,24 +91,28 @@ def bump_version(version, bump_type):
     return new_version
 
 
-def analyze_commits(repo_path):
-    """Analyze commit messages to determine the bump type."""
-    logging.info("Analyzing commit messages for version bump determination.")
+def analyze_last_commit(repo_path):
+    """Analyze the last commit message to determine the version bump type."""
+    logging.info("Analyzing the last commit to determine the version bump type.")
     try:
         result = subprocess.run(
-            ["git", "-C", str(repo_path), "log", "--pretty=%s", "--since=HEAD~10"],
+            ["git", "-C", str(repo_path), "log", "--pretty=%B", "-1"],
             capture_output=True,
             text=True,
             check=True,
         )
-        commit_messages = result.stdout.split("\n")
-        bump_type = "patch"
-        for message in commit_messages:
-            if "BREAKING CHANGE" in message or message.startswith("feat!"):
+        commit_message = result.stdout.split("\n")
+        bump_type = "bugfix"
+        for message in commit_message:
+            if message.startswith("Major"):
                 logging.info("Detected 'major' bump from commit message.")
                 return "major"
-            elif message.startswith("feat"):
+            elif message.startswith("Minor"):
                 bump_type = "minor"
+            elif message.startswith("Bugfix"):
+                bump_type = "bugfix"
+            else:
+                raise ValueError("Invalid commit message format: missing bump type (Major/Minor/Bugfix). Got: {message}")
         logging.info(f"Bump type determined: {bump_type}")
         return bump_type
     except subprocess.CalledProcessError as e:
@@ -205,7 +209,7 @@ def main():
     current_version = read_latest_version(changelog_file)
 
     # Determine the type of version bump based on commits
-    bump_type = analyze_commits(repo_path)
+    bump_type = analyze_last_commit(repo_path)
 
     # Calculate the new version
     new_version = bump_version(current_version, bump_type)
