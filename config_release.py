@@ -110,18 +110,17 @@ def analyze_last_commit(repo_path):
             text=True,
             check=True,
         )
-        commit_message = result.stdout.split("\n")
+        commit_message = result.stdout.strip()
         bump_type = "bugfix"
-        for message in commit_message:
-            if message.startswith("Major"):
-                logging.info("Detected 'major' bump from commit message.")
-                return "major"
-            elif message.startswith("Minor"):
-                bump_type = "minor"
-            elif message.startswith("Bugfix"):
-                bump_type = "bugfix"
-            else:
-                raise ValueError("Invalid commit message format: missing bump type (Major/Minor/Bugfix). Got: {message}")
+        if commit_message.lower().startswith("major"):
+            logging.info("Detected 'major' bump from commit message.")
+            return "major"
+        elif commit_message.lower().startswith("minor"):
+            bump_type = "minor"
+        elif commit_message.lower().startswith("bugfix"):
+            bump_type = "bugfix"
+        else:
+            raise ValueError(f"Invalid commit message format: missing bump type (Major/Minor/Bugfix). Got: {commit_message}")
         logging.info(f"Bump type determined: {bump_type}")
         return bump_type
     except subprocess.CalledProcessError as e:
