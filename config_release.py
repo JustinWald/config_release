@@ -102,6 +102,8 @@ def bump_version(version, bump_type):
 
 def analyze_last_commit(repo_path):
     """Analyze the last commit message to determine the version bump type."""
+    COMMIT_PATTERN = r"[A-Z]+-\d+-(?P<bump_type>\w+)"
+
     logging.info("Analyzing the last commit to determine the version bump type.")
     try:
         result = subprocess.run(
@@ -112,13 +114,9 @@ def analyze_last_commit(repo_path):
         )
         commit_message = result.stdout.strip()
         bump_type = "bugfix"
-        if commit_message.lower().startswith("major"):
-            logging.info("Detected 'major' bump from commit message.")
-            return "major"
-        elif commit_message.lower().startswith("minor"):
-            bump_type = "minor"
-        elif commit_message.lower().startswith("bugfix"):
-            bump_type = "bugfix"
+        match = re.match(COMMIT_PATTERN, commit_message)
+        if match:
+            bump_type = match.group("bump_type").lower()
         else:
             raise ValueError(f"Invalid commit message format: missing bump type (Major/Minor/Bugfix). Got: {commit_message}")
         logging.info(f"Bump type determined: {bump_type}")
