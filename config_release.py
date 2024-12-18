@@ -102,7 +102,7 @@ def bump_version(version, bump_type):
 
 def analyze_last_commit(repo_path):
     """Analyze the last commit message to determine the version bump type."""
-    COMMIT_PATTERN = r"[A-Z]+-\d+-(?P<bump_type>\w+)"
+    COMMIT_PATTERN = r"[A-z]+-\d+-(?P<bump_type>\w+)"
 
     logging.info("Analyzing the last commit to determine the version bump type.")
     try:
