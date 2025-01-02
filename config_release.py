@@ -26,10 +26,10 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def parse_project_metadata(repo_path):
-    """Parse the project metadata from the branch name."""
-    logging.info("Parsing project metadata from branch name.")
-    BRANCH_PATTERN = r"(?P<customer_name>\w+)/(?P<project_name>\w+)/release"
+def parse_customer_name(repo_path):
+    """Parse the customer from the branch name."""
+    logging.info("Parsing customer from branch name.")
+    BRANCH_PATTERN = r"(?P<customer_name>\w+)/release"
 
     try:
         # Get the current branch name
@@ -42,13 +42,13 @@ def parse_project_metadata(repo_path):
         branch_name = result.stdout.strip()
         match = re.search(BRANCH_PATTERN, branch_name)
         if not match:
-            raise ValueError("Branch name does not match the expected pattern. Expected: '<customer_name>/<project_name>/release', got: {branch_name}")
+            raise ValueError("Branch name does not match the expected pattern. Expected: '<customer_name>/release', got: {branch_name}")
 
-        customer_name, project_name = match.group("customer_name"), match.group("project_name")
-        logging.info(f"Extracted metadata: Customer Name = {customer_name}, Project Name = {project_name}")
-        return customer_name, project_name
+        customer_name = match.group("customer_name")
+        logging.info(f"Extracted metadata: Customer Name = {customer_name}")
+        return customer_name
     except Exception as e:
-        logging.error(f"Error parsing project metadata: {e}")
+        logging.error(f"Error parsing customer name: {e}")
         raise
 
 
@@ -203,9 +203,9 @@ def main():
     repo_path = args.repo_path
     changelog_file = repo_path / "CHANGELOG.md"
 
-    # Parse customer and project metadata
-    customer_name, project_name = parse_project_metadata(repo_path)
-    prefix = f"{customer_name}/{project_name}"
+    # Parse customer name
+    customer_name = parse_customer_name(repo_path)
+    prefix = f"{customer_name}"
 
     # Determine the current version from the changelog
     current_version = read_latest_version(changelog_file)
